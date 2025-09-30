@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>防災應變常見問題</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        .tab-active {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        .accordion-arrow {
+            transition: transform 0.3s ease;
+        }
+        .accordion-content.hidden + .accordion-header .accordion-arrow {
+            transform: rotate(0deg);
+        }
+        .accordion-content:not(.hidden) + .accordion-header .accordion-arrow {
+            transform: rotate(180deg);
+        }
+        /* Loading spinner */
+        .loader {
+            border: 4px solid #f3f3f3; /* Light grey */
+            border-top: 4px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto max-w-4xl p-4 sm:p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-blue-600">光復防災 FAQ</h1>
+            <p class="text-gray-500 mt-2">點擊下方頁籤切換分類，點擊問題可展開答案</p>
+        </header>
+
+        <!-- 頁籤導覽 -->
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="-mb-px flex space-x-4" aria-label="Tabs">
+                <button onclick="showTab('cleanup')" id="tab-cleanup" class="tab-button tab-active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                    清淤 FAQ
+                </button>
+                <button onclick="showTab('supplies')" id="tab-supplies" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm">
+                    物資配送 FAQ
+                </button>
+                <button onclick="showTab('checkin')" id="tab-checkin" class="tab-button whitespace-nowrap py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm">
+                    報到 FAQ
+                </button>
+            </nav>
+        </div>
+
+        <!-- FAQ 內容 (將由 JavaScript 動態填入) -->
+        <div id="faq-content">
+            <div id="content-cleanup" class="faq-section space-y-4 hidden">
+                <div class="loader"></div>
+                <p class="text-center text-gray-500">正在從 Google Sheet 讀取資料...</p>
+            </div>
+            <div id="content-supplies" class="faq-section space-y-4 hidden">
+                <div class="loader"></div>
+                <p class="text-center text-gray-500">正在從 Google Sheet 讀取資料...</p>
+            </div>
+            <div id="content-checkin" class="faq-section space-y-4">
+                <div class="loader"></div>
+                <p class="text-center text-gray-500">正在從 Google Sheet 讀取資料...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 請將您從 Google Sheet 取得的 CSV 網址貼在下方 ---
+        const faqSources = {
+            cleanup: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT1ILaMScjXhGIi2cZmqtw2Lg_GVkfkgWgb4tJdSTTOm7Ob6kpM3Siv3FJFSukMZJguGsxuSxhqx1EJ/pub?gid=1318487089&single=true&output=csv',
+            supplies: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT1ILaMScjXhGIi2cZmqtw2Lg_GVkfkgWgb4tJdSTTOm7Ob6kpM3Siv3FJFSukMZJguGsxuSxhqx1EJ/pub?gid=323673293&single=true&output=csv',
+            checkin: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT1ILaMScjXhGIi2cZmqtw2Lg_GVkfkgWgb4tJdSTTOm7Ob6kpM3Siv3FJFSukMZJguGsxuSxhqx1EJ/pub?gid=1374153079&single=true&output=csv',
+        };
+        // ---------------------------------------------------------
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllFAQs();
+        });
+
+        function showTab(tabName) {
+            document.querySelectorAll('.faq-section').forEach(section => section.classList.add('hidden'));
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('tab-active');
+                button.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+            });
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            const activeButton = document.getElementById(`tab-${tabName}`);
+            activeButton.classList.add('tab-active');
+            activeButton.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+        }
+
+        async function loadAllFAQs() {
+            // 使用 Promise.all 同時觸發所有資料的下載
+            await Promise.all([
+                fetchAndDisplayFAQs(faqSources.cleanup, 'content-cleanup'),
+                fetchAndDisplayFAQs(faqSources.supplies, 'content-supplies'),
+                fetchAndDisplayFAQs(faqSources.checkin, 'content-checkin'),
+            ]);
+        }
+
+        async function fetchAndDisplayFAQs(url, containerId) {
+            const container = document.getElementById(containerId);
+            if (!url || url.startsWith('請貼上')) {
+                container.innerHTML = `<p class="text-center text-red-500 font-semibold">錯誤：請在 HTML 檔案的 &lt;script&gt; 區塊中設定正確的 Google Sheet CSV 網址。</p>`;
+                return;
+            }
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`網路回應錯誤: ${response.statusText}`);
+                }
+                const csvText = await response.text();
+                const data = parseCSV(csvText);
+                // console.log(data)
+
+                let htmlContent = '';
+                for (let i = 1; i < data.length; i++) {
+                    const row = data[i];
+                    console.log(row)
+                    if (row && row.length >= 3) {
+                        const question = row[0]; // A欄
+                        const answer = row[1];   // B欄
+                        if (question && answer) {
+                            htmlContent += generateFAQItemHTML(question, answer);
+                        }
+                    }
+                }
+                container.innerHTML = htmlContent || `<p class="text-center text-gray-500">此分類目前沒有問題。</p>`;
+
+            } catch (error) {
+                console.error(`讀取資料時發生錯誤 (ID: ${containerId}):`, error);
+                container.innerHTML = `<p class="text-center text-red-500 font-semibold">讀取資料失敗，請檢查您的網址是否正確，或確認網路連線。</p>`;
+            }
+        }
+
+        function parseCSV(text) {
+            // 更強健的 CSV 解析器,處理引號內的逗號和換行
+            const rows = [];
+            let currentRow = [];
+            let currentField = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i + 1];
+                
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        // 雙引號表示轉義的引號
+                        currentField += '"';
+                        i++; // 跳過下一個引號
+                    } else {
+                        // 切換引號狀態
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    // 欄位分隔符
+                    currentRow.push(currentField.trim());
+                    currentField = '';
+                } else if (char === '\n' && !inQuotes) {
+                    // 行結束
+                    currentRow.push(currentField.trim());
+                    if (currentRow.some(field => field !== '')) {
+                        rows.push(currentRow);
+                    }
+                    currentRow = [];
+                    currentField = '';
+                } else if (char === '\r' && nextChar === '\n' && !inQuotes) {
+                    // Windows 換行符
+                    currentRow.push(currentField.trim());
+                    if (currentRow.some(field => field !== '')) {
+                        rows.push(currentRow);
+                    }
+                    currentRow = [];
+                    currentField = '';
+                    i++; // 跳過 \n
+                } else {
+                    currentField += char;
+                }
+            }
+            
+            // 處理最後一個欄位和行
+            if (currentField || currentRow.length > 0) {
+                currentRow.push(currentField.trim());
+                if (currentRow.some(field => field !== '')) {
+                    rows.push(currentRow);
+                }
+            }
+            
+            return rows;
+        }
+
+        function generateFAQItemHTML(question, answer) {
+            // 將答案中的 \n 換成 <br> 以便在 HTML 中換行
+            const formattedAnswer = answer.replace(/\\n/g, '<br>');
+            return `
+                <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+                    <button class="accordion-header w-full flex justify-between items-center text-left p-5 focus:outline-none">
+                        <span class="text-lg font-semibold text-gray-900">Q: ${question}</span>
+                        <svg class="accordion-arrow w-6 h-6 text-gray-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    <div class="accordion-content hidden">
+                        <div class="border-t border-gray-200 p-5 flex justify-between items-start gap-4">
+                            <p class="answer-text text-gray-600 leading-relaxed pr-4 flex-grow">A: ${formattedAnswer}</p>
+                            <button class="copy-button flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-md text-sm transition-colors self-start">
+                                複製
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+        }
+        
+        // 使用事件委派來處理動態新增的元素
+        document.getElementById('faq-content').addEventListener('click', function(event) {
+            // 處理 Accordion 開合
+            const header = event.target.closest('.accordion-header');
+            if (header) {
+                const content = header.nextElementSibling;
+                content.classList.toggle('hidden');
+                const arrow = header.querySelector('.accordion-arrow');
+                arrow.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+            }
+            
+            // 處理複製按鈕
+            const copyButton = event.target.closest('.copy-button');
+            if (copyButton) {
+                const answerTextElement = copyButton.parentElement.querySelector('.answer-text');
+                const textToCopy = answerTextElement.innerText.replace(/^A:\s*/, '');
+                
+                const textArea = document.createElement('textarea');
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    const originalText = copyButton.innerText;
+                    copyButton.innerText = '已複製!';
+                    copyButton.classList.replace('bg-blue-500', 'bg-green-500');
+                    copyButton.classList.replace('hover:bg-blue-600', 'bg-green-500');
+                    
+                    setTimeout(() => {
+                        copyButton.innerText = originalText;
+                        copyButton.classList.replace('bg-green-500', 'bg-blue-500');
+                        copyButton.classList.add('hover:bg-blue-600');
+                    }, 2000);
+
+                } catch (err) {
+                    console.error('無法複製文字: ', err);
+                }
+                document.body.removeChild(textArea);
+            }
+        });
+
+    </script>
+</body>
+</html>
