@@ -182,7 +182,7 @@
                     }
                     currentRow = [];
                     currentField = '';
-                } else if (char === '\r' && nextChar === '\n' && !inQuotes) {
+                } else if ((char === '\r' && nextChar === '\n' && !inQuotes) || (char === '\r' && !inQuotes)) {
                     // Windows 換行符
                     currentRow.push(currentField.trim());
                     if (currentRow.some(field => field !== '')) {
@@ -208,17 +208,18 @@
         }
 
         function generateFAQItemHTML(question, answer) {
-            // 將答案中的 \n 換成 <br> 以便在 HTML 中換行
-            const formattedAnswer = answer.replace(/\\n/g, '<br>');
+            // Replace newline characters in both question and answer with <br> for proper HTML display
+            const formattedQuestion = question.replace(/\\n/g, '<br>');
+            const formattedAnswer = answer//.replace(/\\n/g, '<br>');
             return `
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                     <button class="accordion-header w-full flex justify-between items-center text-left p-5 focus:outline-none">
-                        <span class="text-lg font-semibold text-gray-900">Q: ${question}</span>
+                        <span class="text-lg font-semibold text-gray-900">Q: ${formattedQuestion}</span>
                         <svg class="accordion-arrow w-6 h-6 text-gray-500 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
                     <div class="accordion-content hidden">
                         <div class="border-t border-gray-200 p-5 flex justify-between items-start gap-4">
-                            <p class="answer-text text-gray-600 leading-relaxed pr-4 flex-grow">A: ${formattedAnswer}</p>
+                            <pre class="answer-text text-gray-600 leading-relaxed pr-4 flex-grow">A: ${formattedAnswer}</pre>
                             <button class="copy-button flex-shrink-0 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded-md text-sm transition-colors self-start">
                                 複製
                             </button>
